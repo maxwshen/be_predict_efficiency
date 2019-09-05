@@ -6,11 +6,14 @@ import sys, string, pickle, subprocess, os, datetime, gzip, time
 from collections import defaultdict, OrderedDict
 import glob
 import numpy as np, pandas as pd
+from scipy.special import expit
 
 nts = list('ACGT')
 nt_to_idx = {nt: nts.index(nt) for nt in nts}
-
-model_dir = '/ahg/regevdata/projects/CRISPR-libraries/prj/lib-modeling/out/anyedit_gbtr/'
+models_design = pd.read_csv('models.csv', index_col = 0)
+model_dir = os.path.dirname(os.path.realpath(__file__)) + '/params/'
+model = None
+init_flag = False
 
 model_settings = {
   'celltype': 'mES',
@@ -19,16 +22,18 @@ model_settings = {
   '__train_test_id': '0_old',
 }
 
-model = None
-init_flag = False
+model_nm_mapper = {}
+for idx, row in models_design.iterrows():
+  inp_set = (row['Public base editor'], row['Celltype'])
+  model_nm = row['Model name']
+  model_nm_mapper[inp_set] = model_nm
 
 '''
   Intended usage: 
-    (rename predict to model nm)
-    import _predict_anyedit
-    _predict_anyedit.init_model(base_editor = '', celltype = '')
+    import predict as be_efficiency_model
+    be_efficiency_model.init_model(base_editor = '', celltype = '')
 
-    scalar = _predict.predict(seq)
+    scalar = be_efficiency_model.predict(seq)
 '''
 
 ####################################################################
@@ -138,18 +143,88 @@ def __featurize(seq):
 # Public 
 ####################################################################
 
-def predict(seq):
+def estimate_conversion_parameters(csv_fn):
+  '''
+    Expect columns:
+      - "Target sequence", 50-nt DNA strings that are individually valid input to the model
+      - "Observed fraction of sequenced reads with base editing activity". Should be in [0, 1].
+
+    Introduces columns (will overwrite if exists):
+    - Predicted frequency
+  '''
+  assert init_flag, f'Call .init_model() first.'
+
+  obs_col = 'Observed fraction of sequenced reads with base editing activity'
+  seq_col = 'Target sequence'
+
+  dd = defaultdict(list)
+  df = pd.read_csv(csv_fn)
+  assert 0 <= min(df[obs_col]) and max(df[obs_col]) <= 1, f'Error: {obs_col} should be in the range [0, 1]'
+  print(f'Making predictions for {len(df)} target sequences...')
+  for idx, row in df.iterrows():
+    pred = predict(row[seq_col])
+    dd['Predicted frequency'].append(pred)
+  print('Done')
+
+  for col in dd:
+    df[col] = dd[col]
+
+  # Estimate mean and variance for converting logistic scalars to [0, 1] range with minimum L2 loss
+  print('Estimating parameters...')
+
+  preds = np.array(df['Predicted frequency'])
+  obs = np.array(df[obs_col])
+  def opt_f(params):
+    [mean, std] = params
+    conv_p = expit(preds * std + mean)
+    return np.sum((conv_p - obs)**2)
+
+  from scipy.optimize import minimize
+  res = minimize(
+    opt_f, 
+    (0, 1), 
+    bounds = (
+      (None, None),
+      (0, None),
+    ),
+  )
+  print(f'Optimization results:\n{res}')
+  [mean, var] = res['x']
+  print(f'Optimization loss: {res["fun"]}')
+
+  return {
+    'Inferred mean': mean,
+    'Inferred std': std,
+  }
+
+
+def predict(seq, mean = None, std = 2):
   assert len(seq) == 50, f'Error: Sequence provided is {len(seq)}, must be 50 (positions -19 to 30 w.r.t. gRNA (positions 1-20)'
 
   assert init_flag, f'Call .init_model() first.'
   seq = seq.upper()
 
   x = __featurize(seq)
-  y = model.predict(x)
-  return float(y)
+  y = float(model.predict(x))
+
+  conv_y = np.nan
+  if mean is not None:
+    assert std > 0, 'Error: Provided std is non-positive'
+    conv_y = expit(y * std + mean)
+
+  return {
+    'Predicted logit score': y,
+    'Predicted fraction of sequenced reads with base editing activity': conv_y,
+  }
 
 
 def init_model(base_editor = '', celltype = ''):
+  # Check
+  ok_editors = set(models_design['Public base editor'])
+  assert base_editor in ok_editors, f'Bad base editor name\nAvailable options: {ok_editors}'
+  ok_celltypes = set(models_design["Celltype"])
+  assert celltype in ok_celltypes, f'Bad celltype\nAvailable options: {ok_celltypes}'
+
   # Update global settings
   spec = {
     'base_editor': base_editor,
@@ -161,8 +236,10 @@ def init_model(base_editor = '', celltype = ''):
     if spec[key] != '':
       model_settings[key] = spec[key]
 
+  model_settings['__model_nm'] = model_nm_mapper[(base_editor, celltype)]
+
   # Load model
-  model_pkl_fn = model_dir + model_settings['__model_nm'] + '_bestmodel.pkl'
+  model_pkl_fn = model_dir + model_settings['__model_nm'] + '.pkl'
   global model
   with open(model_pkl_fn, 'rb') as f:
     model = pickle.load(f)
