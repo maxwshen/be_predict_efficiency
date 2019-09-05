@@ -47,7 +47,7 @@ Base editing efficiency varies not just by sequence context and gRNA but also by
 
 Our model uses two parameters, a mean and standard deviation, to convert the logit score into the range `[0, 1]` representing the fraction of sequenced reads with base editing activity: 
 
-1 / (1 + exp(-(`logit_score` * `std` + `mean`))).
+`1 / (1 + exp(-(logit_score * std + mean)))`.
 
 Note that these models were trained on a comprehensive, minimally biased library containing sequence contexts with all 4-mers surrounding substrate nucleotides from positions 1-11. This minimally biased set of sequence contexts necessarily contains some sequence contexts that users are unlikely to select for base editing; users are likely to work with sequence contexts with above average editing efficiency in the space of all possible sequence contexts. As a result, simply using the average editing efficiency from your observed data will likely lead to predictions overestimating reality.
 
@@ -68,18 +68,11 @@ conv_d = be_efficiency_model.estimate_conversion_parameters(csv_fn)
 Values for the mean and standard deviation can be provided to the function as follows. We recommend using the inferred mean and std from your observed data to avoid predictions overestimating or underestimating reality. 
 
 ```python
-pred_d = be_efficiency_model.predict(
-  seq,
-  mean = <float>,
-  std = <float>,
-)
+pred_d = be_efficiency_model.predict(seq, mean = <float>, std = <float>)
 
 # or
 
-pred_d = be_efficiency_model.predict(
-  seq,
-  mean = <float>,
-)
+pred_d = be_efficiency_model.predict(seq, mean = <float>)
 ```
 
 `pred_d` is a dict with the following keys.
