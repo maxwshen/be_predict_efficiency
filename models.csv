@@ -17,3 +17,6 @@
 15,CDA,CDA,mES,mES_12kChar_CDA_bestmodel
 16,eA3A,eA3A,mES,mES_12kChar_eA3A_bestmodel
 17,evoAPOBEC,evoAPOBEC,mES,mES_12kChar_evoAPOBEC_bestmodel
+18,BE4-H47ES48A,BE4_H47ES48A,mES,mES_12kChar_BE4_H47ES48A_bestmodel
+19,eA3A_T31A,eA3A_T31A,mES,mES_12kChar_eA3A_T31A_bestmodel
+20,eA3A_T31AT44A,eA3A_T31AT44A,mES,mES_12kChar_eA3A_T31AT44A_bestmodel
