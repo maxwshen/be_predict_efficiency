@@ -10,13 +10,13 @@ Clone this github repository, then set up your environment to import the `predic
 
 ```python
 import sys
-sys.path.append('/directory/to/local/repo/clone/')
-import predict as be_efficiency_model
+sys.path.append('/directory/containing/local/repo/clone/')
+from be_predict_efficiency import predict as be_efficiency_model
 ```
 
 ## Usage
 ```python
-import predict as be_efficiency_model
+from be_predict_efficiency import predict as be_efficiency_model
 be_efficiency_model.init_model(base_editor = 'BE4', celltype = 'mES')
 ```
 
@@ -36,7 +36,7 @@ pred_d = be_efficiency_model.predict(seq)
 
 ### Example usage
 ```python
-import predict as be_efficiency_model
+from be_predict_efficiency import predict as be_efficiency_model
 be_efficiency_model.init_model(base_editor = 'BE4', celltype = 'mES')
 
 seq = 'TATCAGCGGGAATTCAAGCGCACCAGCCAGAGGTGTACCGTGGACGTGAG'
