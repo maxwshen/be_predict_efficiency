@@ -1,7 +1,8 @@
 # be_predict_efficiency
 
 ## Dependencies
-- Python 3.7 and standard packages (pickle, scipy, sklearn, numpy, pandas)
+- Python 3.7 and standard packages (pickle, scipy, numpy, pandas)
+- scikit-learn==0.20.3
 
 ## Installation
 Clone this github repository, then set up your environment to import the `predict.py` script in however is most convenient for you. In python, for instance, you may use the following at the top of your script to import the model.
