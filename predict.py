@@ -9,9 +9,10 @@ import numpy as np, pandas as pd
 from scipy.special import expit
 
 nts = list('ACGT')
+curr_fold = os.path.dirname(os.path.realpath(__file__))
 nt_to_idx = {nt: nts.index(nt) for nt in nts}
-models_design = pd.read_csv('models.csv', index_col = 0)
-model_dir = os.path.dirname(os.path.realpath(__file__)) + '/params/'
+models_design = pd.read_csv(curr_fold + '/models.csv', index_col = 0)
+model_dir = curr_fold + '/params/'
 model = None
 init_flag = False
 
