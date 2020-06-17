@@ -84,7 +84,7 @@ pred_d = be_efficiency_model.predict(seq, mean = <float>)
 If `std` is not specified, the default value is 2.
 
 ## Contact
-maxwshen at mit.edu
+maxwshen at gmail.com
 
 ### License
-tba
+https://www.crisprbehive.design/about
