@@ -199,7 +199,7 @@ def estimate_conversion_parameters(csv_fn):
   }
 
 
-def predict(seq, mean = None, std = 2):
+def predict(seq, mean = None, std = 1.5):
   assert len(seq) == 50, f'Error: Sequence provided is {len(seq)}, must be 50 (positions -19 to 30 w.r.t. gRNA (positions 1-20)'
 
   assert init_flag, f'Call .init_model() first.'
